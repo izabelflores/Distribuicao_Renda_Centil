@@ -6,48 +6,68 @@ library(stringr)
 library(readxl)
 library(tidyr)
 library(ggplot2)
-library(jantior)
+library(janitor)
 
-### 1.FUNÇÕES ####
+
+#### 1. FUNCOES ####
+
+# montar urls
+
 
 read_ir_url <- function() {
   # pra puxar as urls
-
-  ano_inicial <- 2006
-  ano_final <- 2020
-
+  
+  sufixos <-
+    c(
+      "20210321%20Centil2007_AC2006", #2006
+      "20210321%20Centil2008_AC2007", #2007
+      "20210321%20Centil2009_AC2008", #2008
+      "20210321%20Centil2010_AC2009", #2009
+      "20210321%20Centil2011_AC2010", #2010
+      "20210321%20Centil2012_AC2011", #2011
+      "20210321%20Centil2013_AC2012", #2012
+      "20210321%20Centil2014_AC2013", #2013
+      "20210321%20Centil2015_AC2014", #2014
+      "20210321%20Centil2016_AC2015", #2015
+      "20210325%20Centil2017_AC2016", #2016
+      "20210321%20Centil2018_AC2017", #2017
+      "20210321%20Centil2019_AC2018", #2018
+      "20210326%20Centil2020_AC2019", #2019
+      "20210829%20Centil%20AC%202020%20(2)" #2020
+    )
+  
+  ano <- 2006:2020
+  
   url_ir <- paste0(
-    "https://www.gov.br/receitafederal/pt-br/acesso-a-informacao/dados-abertos/receitadata/estudos-e-tributarios-e-aduaneiros/estudos-e-estatisticas/distribuicao-da-renda-por-centis/20210321-centil",
-    (ano_inicial + 1):(ano_final),
-    "_ac",
-    (ano_inicial):(ano_final - 1),
-    ".xlsx"
+    "https://www.gov.br/receitafederal/pt-br/centrais-de-conteudo/publicacoes/estudos/distribuicao-da-renda/distribuicao-da-renda-por-centis-",
+    ano, "/@@download/file/", sufixos, ".xlsx"
   ) %>%
-    append(
-      "https://www.gov.br/receitafederal/pt-br/acesso-a-informacao/dados-abertos/receitadata/estudos-e-tributarios-e-aduaneiros/estudos-e-estatisticas/distribuicao-da-renda-por-centis/20210829-centil-ac-2020.xlsx"
-    ) %>%
     as.list() %>%
-    set_names(ano_inicial:ano_final) %>%
-    purrr::modify_in("2016", ~ stringr::str_replace(.x, "20210321", "20210325")) %>%
-    purrr::modify_in("2019", ~ stringr::str_replace(.x, "20210321", "20210326"))
-}
+    set_names(ano)
+
+  }
+
+
+# baixar arquivos em pasta temporaria
 
 donwload_ir <- function(url_ir) {
-
-  # baixa os arquivos em tempfile
-
+  
   purrr::walk2(
     url_ir, # as urls
     url_ir %>% names(), # os nomes dos itens nas listas que são os anos
     ~ download.file(.x, # passa cada item do primeiro vetor
-      destfile = paste0(tempdir(), "\\ir", .y, ".xlsx"), # segundo item do vetor
-      mode = "wb"
+                    destfile = paste0(tempdir(), "\\ir", .y, ".xlsx"), # segundo item do vetor
+                    mode = "wb"
     )
   ) # modo
-
+  
+  # caminho pastas
   path <- paste0(tempdir(), "\\ir", 2006:2020, ".xlsx")
 }
+  
 
+  #### lendo sheets ####
+  
 read_ir_clean <- function(path, sheet) {
 
   # lê uma aba do excel
